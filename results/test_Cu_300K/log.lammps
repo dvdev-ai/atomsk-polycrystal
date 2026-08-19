@@ -1,0 +1,173 @@
+LAMMPS (22 Jul 2025 - Update 4)
+# Одноосное растяжение поликристалла
+# Обязательные -var: temp datafile potfile elem material
+
+units           metal
+atom_style      atomic
+boundary        p p p
+
+read_data       ${datafile}
+read_data       ../../models/Cu_poly.data
+Reading data file ...
+  orthogonal box = (0 0 0) to (60 60 60)
+  1 by 1 by 1 MPI processor grid
+  reading atoms ...
+  17939 atoms
+  read_data CPU = 0.047 seconds
+
+pair_style      eam/alloy
+pair_coeff      * * ${potfile} ${elem}
+pair_coeff      * * ../../potentials/Cu_mishin1.eam.alloy ${elem}
+pair_coeff      * * ../../potentials/Cu_mishin1.eam.alloy Cu
+Reading eam/alloy potential file ../../potentials/Cu_mishin1.eam.alloy with DATE: 2007-10-12
+
+neighbor        2.0 bin
+neigh_modify    delay 10 every 1
+
+timestep        0.001
+
+reset_timestep  0
+minimize        1.0e-12 1.0e-12 500 5000
+Switching to 'neigh_modify every 1 delay 0 check yes' setting during minimization
+Neighbor list info ...
+  update: every = 1 steps, delay = 0 steps, check = yes
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 7.50679
+  ghost atom cutoff = 7.50679
+  binsize = 3.753395, bins = 16 16 16
+  1 neighbor lists, perpetual/occasional/extra = 1 0 0
+  (1) pair eam/alloy, perpetual
+      attributes: half, newton on
+      pair build: half/bin/atomonly/newton
+      stencil: half/bin/3d
+      bin: standard
+WARNING: A per-atom density exceeded rhomax of EAM potential table - a linear extrapolation to the energy was made (src/MANYBODY/pair_eam.cpp:335)
+Per MPI rank memory allocation (min/avg/max) = 17.47 | 17.47 | 17.47 Mbytes
+   Step          Temp          E_pair         E_mol          TotEng         Press     
+         0   0             -26373.138      0             -26373.138      419341.13    
+       500   0             -62561.856      0             -62561.856     -4325.6636    
+Loop time of 27.5392 on 1 procs for 500 steps with 17939 atoms
+
+97.6% CPU use with 1 MPI tasks x no OpenMP threads
+
+Minimization stats:
+  Stopping criterion = max iterations
+  Energy initial, next-to-last, final = 
+     -26373.1382169928  -62561.6663618975  -62561.8558162963
+  Force two-norm initial, final = 30496.086 1.6328063
+  Force max component initial, final = 8615.757 0.38365446
+  Final line search alpha, max atom move = 0.21996296 0.08438977
+  Iterations, force evaluations = 500 724
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 25.345     | 25.345     | 25.345     |   0.0 | 92.03
+Neigh   | 1.6204     | 1.6204     | 1.6204     |   0.0 |  5.88
+Comm    | 0.082853   | 0.082853   | 0.082853   |   0.0 |  0.30
+Output  | 0.00014946 | 0.00014946 | 0.00014946 |   0.0 |  0.00
+Modify  | 0          | 0          | 0          |   0.0 |  0.00
+Other   |            | 0.4905     |            |       |  1.78
+
+Nlocal:          17939 ave       17939 max       17939 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:          17211 ave       17211 max       17211 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:     1.2899e+06 ave  1.2899e+06 max  1.2899e+06 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 1289899
+Ave neighs/atom = 71.904733
+Neighbor list builds = 34
+Dangerous builds = 0
+
+variable        T equal ${temp}
+variable        T equal 300
+velocity        all create ${T} 492845 rot yes dist gaussian
+velocity        all create 300 492845 rot yes dist gaussian
+
+fix             eq all npt temp ${T} ${T} 0.1 iso 0 0 1
+fix             eq all npt temp 300 ${T} 0.1 iso 0 0 1
+fix             eq all npt temp 300 300 0.1 iso 0 0 1
+thermo          500
+thermo_style    custom step temp pe press lx ly lz
+run             10000
+Per MPI rank memory allocation (min/avg/max) = 14.47 | 14.47 | 14.47 Mbytes
+   Step          Temp          PotEng         Press            Lx             Ly             Lz      
+       500   300           -62561.856     -885.92639      60             60             60           
+      1000   219.88134     -62044.997     -867.32522      60.169015      60.169015      60.169015    
+      1500   302.46875     -61845.449     -634.97708      60.253201      60.253201      60.253201    
+      2000   294.90861     -61878.585      128.93313      60.226549      60.226549      60.226549    
+      2500   297.87748     -61871.647     -102.83154      60.233925      60.233925      60.233925    
+      3000   304.16471     -61866.079     -252.53465      60.23821       60.23821       60.23821     
+      3500   300.73491     -61876.829      244.95414      60.224783      60.224783      60.224783    
+      4000   295.8285      -61891.258      238.09763      60.218494      60.218494      60.218494    
+      4500   299.36837     -61882.757     -185.40845      60.229805      60.229805      60.229805    
+      5000   305.05178     -61884.432     -597.9369       60.23624       60.23624       60.23624     
+      5500   300.68515     -61892.834      40.311881      60.220957      60.220957      60.220957    
+      6000   297.68335     -61903.178      404.18046      60.211722      60.211722      60.211722    
+      6500   300.49252     -61895.813     -161.91484      60.223955      60.223955      60.223955    
+      7000   300.32666     -61896.264     -661.24884      60.229579      60.229579      60.229579    
+      7500   298.36462     -61908.858      413.18982      60.209601      60.209601      60.209601    
+      8000   299.10647     -61912.45       607.125        60.203866      60.203866      60.203866    
+      8500   301.96457     -61907.641     -895.75654      60.229941      60.229941      60.229941    
+      9000   301.68872     -61905.109     -432.02733      60.223227      60.223227      60.223227    
+      9500   300.57005     -61915.88       621.42594      60.202417      60.202417      60.202417    
+     10000   298.86851     -61921.302      116.47669      60.208772      60.208772      60.208772    
+     10500   299.05938     -61918.905     -342.55618      60.21555       60.21555       60.21555     
+Loop time of 336.706 on 1 procs for 10000 steps with 17939 atoms
+
+Performance: 2.566 ns/day, 9.353 hours/ns, 29.699 timesteps/s, 532.779 katom-step/s
+96.3% CPU use with 1 MPI tasks x no OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 327.7      | 327.7      | 327.7      |   0.0 | 97.33
+Neigh   | 2.0513     | 2.0513     | 2.0513     |   0.0 |  0.61
+Comm    | 0.95747    | 0.95747    | 0.95747    |   0.0 |  0.28
+Output  | 0.0024251  | 0.0024251  | 0.0024251  |   0.0 |  0.00
+Modify  | 5.5651     | 5.5651     | 5.5651     |   0.0 |  1.65
+Other   |            | 0.4286     |            |       |  0.13
+
+Nlocal:          17939 ave       17939 max       17939 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:          17102 ave       17102 max       17102 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    1.28884e+06 ave 1.28884e+06 max 1.28884e+06 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 1288840
+Ave neighs/atom = 71.845699
+Neighbor list builds = 45
+Dangerous builds = 0
+unfix           eq
+
+variable        L0 equal lx
+print           "L0=${L0} T=${T} material=${material}"
+L0=60.215549906306 T=300 material=Cu
+
+reset_timestep  0
+fix             1 all npt temp ${T} ${T} 0.1 y 0 0 1 z 0 0 1 drag 1.0
+fix             1 all npt temp 300 ${T} 0.1 y 0 0 1 z 0 0 1 drag 1.0
+fix             1 all npt temp 300 300 0.1 y 0 0 1 z 0 0 1 drag 1.0
+variable        erate equal 1.0e9
+variable        erate_ps equal "v_erate/1.0e12"
+fix             2 all deform 1 x erate ${erate_ps} units box remap x
+fix             2 all deform 1 x erate 0.001 units box remap x
+
+variable        strain equal "(lx - v_L0)/v_L0"
+variable        sxx equal "-pxx/10000"
+variable        syy equal "-pyy/10000"
+variable        szz equal "-pzz/10000"
+fix             out all print 200 "${strain} ${sxx} ${syy} ${szz}" file stress_strain.dat screen no
+
+dump            1 all custom 2000 dump_tension.lammpstrj id type x y z
+dump_modify     1 element ${elem} sort id
+dump_modify     1 element Cu sort id
+
+thermo          500
+thermo_style    custom step v_strain temp v_sxx ke pe
+run             30000
+ERROR: Thermo keyword pxx in variable requires thermo to use/init press (src/thermo.cpp:1322)
+Last input line: run 30000

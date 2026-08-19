@@ -1,0 +1,54 @@
+# Одноосное растяжение поликристалла
+# Обязательные -var: temp datafile potfile elem material
+
+units           metal
+atom_style      atomic
+boundary        p p p
+
+read_data       ${datafile}
+
+pair_style      eam/alloy
+pair_coeff      * * ${potfile} ${elem}
+
+neighbor        2.0 bin
+neigh_modify    delay 10 every 1
+
+timestep        0.001
+
+reset_timestep  0
+minimize        1.0e-12 1.0e-12 500 5000
+
+variable        T equal ${temp}
+velocity        all create ${T} 492845 rot yes dist gaussian
+
+fix             eq all npt temp ${T} ${T} 0.1 iso 0 0 1
+thermo          500
+thermo_style    custom step temp pe press lx ly lz
+run             10000
+unfix           eq
+
+# Зафиксировать L0 (${} — подстановка один раз; иначе ε≡0)
+variable        L0snap equal lx
+variable        L0 equal ${L0snap}
+print           "L0=${L0} T=${T} material=${material}"
+
+reset_timestep  0
+fix             1 all npt temp ${T} ${T} 0.1 y 0 0 1 z 0 0 1 drag 1.0
+variable        erate equal 1.0e9
+variable        erate_ps equal "v_erate/1.0e12"
+fix             2 all deform 1 x erate ${erate_ps} units box remap x
+
+variable        strain equal "(lx - v_L0)/v_L0"
+variable        sxx equal "-pxx/10000"
+variable        syy equal "-pyy/10000"
+variable        szz equal "-pzz/10000"
+fix             out all print 200 "${strain} ${sxx} ${syy} ${szz}" file stress_strain.dat screen no
+
+dump            1 all custom 2000 dump_tension.lammpstrj id type x y z
+dump_modify     1 element ${elem} sort id
+
+thermo          500
+thermo_style    custom step v_strain temp press pxx pyy pzz ke pe
+run             30000
+
+print           "Done."
